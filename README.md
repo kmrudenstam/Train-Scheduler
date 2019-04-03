@@ -2,4 +2,4 @@
 
 https://kmrudenstam.github.io/Train-Scheduler/
 
-Project that utilizes HTML, CSS, Bootstrap, JS, JQuery, Moment.js, and Firebase 
+A train schedule application that utilizes JQuery, Moment.js, and Firebase  to host arrival and departure data.
