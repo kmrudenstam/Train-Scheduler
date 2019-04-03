@@ -1,100 +1,88 @@
-$(document).ready(function () {
+// Initialize Firebase
+var config = {
+    apiKey: "AIzaSyCRBqyme-X89Q6Jn9056EypSE6Ppduh4yo",
+    authDomain: "train-scheduler-28596.firebaseapp.com",
+    databaseURL: "https://train-scheduler-28596.firebaseio.com",
+    projectId: "train-scheduler-28596",
+    storageBucket: "train-scheduler-28596.appspot.com",
+    messagingSenderId: "999420847926"
+};
 
-    // Initialize Firebase
-    var config = {
-        apiKey: "AIzaSyCRBqyme-X89Q6Jn9056EypSE6Ppduh4yo",
-        authDomain: "train-scheduler-28596.firebaseapp.com",
-        databaseURL: "https://train-scheduler-28596.firebaseio.com",
-        projectId: "train-scheduler-28596",
-        storageBucket: "train-scheduler-28596.appspot.com",
-        messagingSenderId: "999420847926"
+firebase.initializeApp(config);
+
+// Link to Firebase
+
+var database = firebase.database();
+
+// Button to add trains
+$("#add-train").on("click", function (event) {
+    event.preventDefault();
+
+    // Grab user input 
+    var trainName = $("#name-input").val().trim();
+    var trainDest = $("#destination-input").val().trim();
+    var trainStart = moment($("#trainStart-input").val().trim(), "HH:mm").subtract(10, "years").format("X");
+    var trainFreq = $("#frequency-input").val().trim();
+
+    // Create local "temporary" object for holding train data 
+    var newTrain = {
+        name: trainName,
+        destination: trainDest,
+        start: trainStart,
+        frequency: trainFreq
     };
 
-    firebase.initializeApp(config);
+    // Upload train data to the database
+    database.ref().push(newTrain);
 
-    // Link to Firebase
-    //var trainData = new Firebase ("https://train-scheduler-28596.firebaseio.com");
-    var database = firebase.database();
-    
-    // Button to add trains
-    $("#add-train").on("click", function (event) {
-        event.preventDefault();
-
-        // Grab user input 
-        var trainName = $("#name-input").val().trim();
-        var destination = $("#destination-input").val().trim();
-        var trainTimeInput = $("#train-time-input").val().trim();
-        var frequencyInput = $("#frequency-input").val().trim();
-
-        // Create local "temporary" object for holding train data 
-        var newTrain = {
-            name: trainName,
-            destination: destination,
-            trainTime: trainTimeInput,
-            frequency: frequencyInput
-        };
-
-        // Upload train data to the database
-        database.ref().push(newTrain);
-
-        // Log everything to console
-        console.log(newTrain.name);
-        console.log(newTrain.destination);
-        console.log(newTrain.trainTime);
-        console.log(newTrain.frequency);
+    // Log everything to console
+    console.log(newTrain.name);
+    console.log(newTrain.destination);
+    console.log(newTrain.start);
+    console.log(newTrain.frequency);
 
 
-        // Clear all of the input-fields 
-        $("#name-input").val("");
-        $("#destination-input").val("");
-        $("#train-time-input").val("");
-        $("#frequency-input").val("");
-    
-      // Prevent page from refreshing
-      return false;
-    
-    });
+    // Clear all of the input-fields 
+    $("#name-input").val("");
+    $("#destination-input").val("");
+    $("#trainStart-input").val("");
+    $("#frequency-input").val("");
 
-    // Create Firebase event for adding train to the database and a row in the HTML when user adds an entry
-    database.ref().on("child_added", function (childSnapshot) {
-        console.log(childSnapshot.val());
+    // Prevent page from refreshing
+    //return false;
+});
 
-        // Store everything into a variable
-        var trainName = childSnapshot.val().name;
-        var destination = childSnapshot.val().destination;
-        var trainTimeInput = childSnapshot.val().trainTime;
-        var frequencyInput = childSnapshot.val().frequency;
+// Create Firebase event for adding train to the database and a row in the HTML when user adds an entry
+database.ref().on("child_added", function (snapshot) {
+    console.log(snapshot.val());
 
-        console.log(trainName);
-        console.log(destination);
-        console.log(trainTimeInput);
-        console.log(frequencyInput);
+    // Store everything into a variable
+    var trainName = snapshot.val().name;
+    var trainDest = snapshot.val().destination;
+    var trainStart = snapshot.val().start;
+    var trainFreq = snapshot.val().frequency;
 
 
-        //var diffTime = moment().diff(moment.unix(trainTimeInput), "minutes");
-        var timeRemainder = moment().diff(moment.unix(trainTimeInput), "minutes") % frequency;
-        var minutes = frequency - timeRemainder;
+    // Calculate difference between train times
+    var difference = moment().diff(moment.unix(trainStart), "minutes");
+    // Time remainder/ time until next train arrival
+    var timeRemain = moment().diff(moment.unix(trainStart), "minutes") % trainFreq;
 
-        var nextTrainArrival = moment().add(minutes, "m").format("hh:mm A");
+    // Caluculate how many minutes away train is
+    var minAway = trainFreq - timeRemain;
+    // Time for next arrival
+    var nextArrival = moment().add(minAway, "m").format("hh:mm A");
 
-        // Test for correct times & info
-        console.log(minutes);
-        console.log(nextTrainArrival);
-        console.log(moment().format("hh:mm A"));
-        console.log(nextTrainArrival);
-        console.log(moment().format("X"));
+    // Create new row and append train info to table on page
+    var newRow = $("<tr>").append(
+        $("<td>").text(trainName),
+        $("<td>").text(trainDest),
+        $("<td>").text(trainFreq),
+        $("<td>").text(nextArrival),
+        $("<td>").text(minAway),
+    );
 
-        // Append train info to table on page
-        var newRow = $("<tr>").append(
-            $("<td>").text(trainName),
-            $("<td>").text(destination),
-            $("<td>").text(trainTime),
-            $("<td>").text(frequency),
-        );
-
-        // Append new row to the table
-        $("#train-table > tbody").append(newRow);
-
-    });
+    // Append new row to the table
+    $("#train-table > tbody").append(newRow);
 
 });
